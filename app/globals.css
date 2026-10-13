@@ -79,10 +79,11 @@
   background-image: var(--paper-grain);
 }
 
-/* 信紙橫線（閱讀感想） */
+/* 信紙橫線（閱讀感想）：每 32px 一條線，畫在每一行的底部。
+   要配合 leading-8（行高 32px）使用，文字才會剛好坐在線上 */
 @utility ruled {
-  background-image: repeating-linear-gradient(transparent 0 31px, rgba(140, 110, 70, 0.22) 31px 32px);
-  background-position: 0 12px;
+  background-image: repeating-linear-gradient(transparent 0 31px, rgba(140, 110, 70, 0.32) 31px 32px);
+  background-attachment: local;
 }
 
 /* 皮革精裝書封面（沒有封面圖時） */

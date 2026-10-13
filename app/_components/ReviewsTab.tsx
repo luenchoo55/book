@@ -19,7 +19,7 @@ export default function ReviewsTab({ lib, openBook }: { lib: Library; openBook: 
       {written.length ? (
         <div className="mt-[18px] grid grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))] gap-[18px]">
           {written.map((b) => (
-            <article key={b.id} className="ruled relative rounded-[3px] border border-rule bg-[#fffaec]/45 px-[22px] pt-5 pb-4">
+            <article key={b.id} className="relative rounded-[3px] border border-rule bg-[#fffaec]/45 px-[22px] pt-5 pb-4">
               <span className="absolute -top-[7px] right-6 size-3.5 rounded-full bg-[radial-gradient(circle_at_35%_35%,#d97a63,var(--color-stamp)_60%,#4f1d14)] shadow-[0_2px_3px_rgba(0,0,0,.4)]" aria-hidden />
               <div className="grid grid-cols-[58px_minmax(0,1fr)] items-start gap-3.5">
                 <Cover book={b} />
@@ -33,7 +33,7 @@ export default function ReviewsTab({ lib, openBook }: { lib: Library; openBook: 
                   <Stars value={b.rating} className="mt-1" />
                 </div>
               </div>
-              <blockquote className={`mt-3.5 font-zh text-[15px] leading-8 break-words whitespace-pre-wrap ${b.review ? "" : "text-faint italic"}`}>{b.review || "（只打了分數，還沒寫下文字）"}</blockquote>
+              <blockquote className={`ruled mt-3.5 min-h-24 font-zh text-[15px] leading-8 break-words whitespace-pre-wrap ${b.review ? "" : "text-faint italic"}`}>{b.review || "（只打了分數，還沒寫下文字）"}</blockquote>
               <div className="mt-2 flex justify-end">
                 <button className="btn btn-ghost btn-sm" onClick={() => openBook(b, "review")}>
                   <Icon name="edit" size={15} /> 編輯感想

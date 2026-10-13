@@ -120,7 +120,7 @@ function BookForm({ draft, focus, onClose, op, locations }: { draft: BookDraft; 
         </div>
         <Field label="閱讀感想" className="mt-3.5">
           <textarea
-            className="input ruled min-h-40 resize-y bg-[#fffaec]/55 font-zh leading-8"
+            className="input ruled min-h-40 resize-y bg-[#fffaec]/55 bg-position-[0_8px] font-zh leading-8"
             value={f.review}
             onChange={(e) => set("review", e.target.value)}
             placeholder="這本書讓我想到…"
