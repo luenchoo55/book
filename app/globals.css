@@ -1,26 +1,183 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* 視覺風格：復古圖書館、溫暖木頭書店。
+   深色木紋桌面當底，內容放在泛黃的羊皮紙上；英文數字用打字機字體，中文用宋體。
+   顏色、字體都寫在 @theme，元件裡直接用 Tailwind class，例如 bg-paper、text-ink、font-zh。 */
+@theme {
+  --color-wood-950: #1a120c;
+  --color-wood-900: #2a1d13;
+  --color-wood-800: #3a2819;
+  --color-wood-600: #5c3c20;
+  --color-wood-400: #8a5d33;
+  --color-paper: #eadcbc;
+  --color-paper-2: #e1d0aa;
+  --color-paper-dark: #cdb688;
+  --color-paper-edge: #b8975f;
+  --color-ink: #2a2018;
+  --color-ink-soft: #3d3023;
+  --color-muted: #6a5841;
+  --color-faint: #8e7a5c;
+  --color-line: #9c8259;
+  --color-rule: #c9b48b;
+  --color-brass: #b98a45;
+  --color-brass-soft: #e2c48c;
+  --color-stamp: #8e3b2e;
+  --color-moss: #3f5a2c;
+  --color-sea: #2f4f62;
+  --color-amber: #7b4d14;
+  --color-on-wood: #ecdcb8;
+  --color-on-wood-muted: #b49d78;
+  --color-gilt: #e8cf95;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-type: var(--font-courier), "Courier New", var(--font-serif-tc), monospace;
+  --font-elite: var(--font-special-elite), var(--font-courier), var(--font-serif-tc), serif;
+  --font-zh: var(--font-serif-tc), "Songti TC", "Noto Serif TC", serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --animate-drop: drop 0.25s ease-out;
+  @keyframes drop {
+    from {
+      opacity: 0;
+      translate: 0 10px;
+    }
   }
 }
 
+:root {
+  color-scheme: light;
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .24 0 0 0 0 .1 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- 自訂的質感 utility ---------- */
+
+/* 木紋桌面：幾層細直條紋 + 窗光從左上角灑進來 */
+@utility bg-wood {
+  background-color: var(--color-wood-900);
+  background-image:
+    radial-gradient(120% 70% at 12% 0%, rgba(255, 196, 120, 0.16), transparent 60%),
+    radial-gradient(90% 60% at 100% 100%, rgba(0, 0, 0, 0.45), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.1) 0 2px, transparent 2px 9px, rgba(255, 220, 170, 0.03) 9px 11px, transparent 11px 23px),
+    repeating-linear-gradient(90deg, var(--color-wood-900) 0 140px, var(--color-wood-800) 140px 142px, var(--color-wood-900) 142px 300px);
+  background-attachment: fixed;
+}
+
+/* 羊皮紙：紙纖維雜訊 + 邊緣泛黃燒焦感 + 投影 */
+@utility paper {
+  position: relative;
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+  background-image: var(--paper-grain), radial-gradient(130% 120% at 50% 40%, transparent 55%, rgba(120, 80, 30, 0.28) 100%);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 85, 40, 0.35),
+    inset 0 0 38px rgba(130, 90, 40, 0.3),
+    0 14px 30px -12px rgba(0, 0, 0, 0.65),
+    0 3px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* 只有紙纖維（給分頁籤、提示紙條用） */
+@utility grain {
+  background-image: var(--paper-grain);
+}
+
+/* 信紙橫線（閱讀感想） */
+@utility ruled {
+  background-image: repeating-linear-gradient(transparent 0 31px, rgba(140, 110, 70, 0.22) 31px 32px);
+  background-position: 0 12px;
+}
+
+/* 皮革精裝書封面（沒有封面圖時） */
+@utility cloth {
+  background-image:
+    var(--paper-grain),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.35) 0 6%, rgba(255, 255, 255, 0.08) 6% 8%, transparent 8%),
+    radial-gradient(120% 90% at 50% 30%, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.35));
+}
+
+/* 書背：上下各一條燙金線 */
+@utility spine-gilt {
+  background-image:
+    linear-gradient(180deg, transparent 8px, rgba(232, 207, 149, 0.55) 8px 10px, transparent 10px calc(100% - 12px), rgba(232, 207, 149, 0.55) calc(100% - 12px) calc(100% - 10px), transparent 0),
+    var(--paper-grain);
+  box-shadow:
+    inset 3px 0 0 rgba(255, 255, 255, 0.1),
+    inset -3px 0 0 rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+/* 書架的木板 */
+@utility plank {
+  background: linear-gradient(180deg, #2a1c11, #3b2817 70%, #2e1f12);
+  box-shadow: inset 0 10px 18px rgba(0, 0, 0, 0.55), inset 0 -2px 0 rgba(0, 0, 0, 0.4);
+}
+@utility plank-edge {
+  background: linear-gradient(180deg, var(--color-wood-400), var(--color-wood-600) 60%, #3e2815);
+  box-shadow: 0 6px 10px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* 郵戳波浪線 */
+@utility postmark-waves {
+  background: repeating-linear-gradient(180deg, transparent 0 4px, rgba(42, 32, 24, 0.45) 4px 5px);
+  border-radius: 50% / 40%;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ---------- 共用元件 ---------- */
+@layer components {
+  .btn {
+    @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[3px] border border-line bg-[#fff8e6]/35 px-4 py-1.5 font-type text-sm font-bold tracking-wide whitespace-nowrap text-ink no-underline transition-colors hover:border-ink hover:bg-[#fff8e6]/75 disabled:cursor-default disabled:opacity-45;
+  }
+  .btn-pri {
+    @apply border-ink bg-ink text-paper shadow-[0_2px_0_rgba(0,0,0,.35)] hover:bg-ink-soft;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent hover:border-line;
+  }
+  .btn-danger {
+    @apply border-stamp text-stamp;
+  }
+  .btn-sm {
+    @apply min-h-8 px-2.5 py-1 text-[13px];
+  }
+  .btn-wood {
+    @apply border-on-wood/30 bg-on-wood/10 text-on-wood hover:border-on-wood-muted hover:bg-on-wood/20;
+  }
+
+  .input {
+    @apply min-h-[42px] w-full rounded-[3px] border border-line bg-[#fffaec]/55 px-3 py-2 font-type text-[15px] text-ink placeholder:text-faint focus:border-ink focus:bg-[#fffaec]/85 focus:shadow-[0_0_0_3px_rgba(185,138,69,.25)] focus:outline-none;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-[2px] border border-current px-2 py-1 font-zh text-xs leading-none font-bold whitespace-nowrap;
+  }
+}
+
+/* ---------- 基本設定 ---------- */
+html {
+  scroll-padding-top: 80px;
+}
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-wood min-h-dvh px-4 pb-[calc(48px+env(safe-area-inset-bottom,0px))] pt-[env(safe-area-inset-top,0px)] font-type text-[15px] leading-relaxed text-on-wood;
+}
+button {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px dashed var(--color-brass);
+  outline-offset: 3px;
+}
+dialog::backdrop {
+  background: rgba(15, 9, 5, 0.72);
+  backdrop-filter: blur(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }
