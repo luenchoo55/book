@@ -22,6 +22,10 @@ const date = (v: unknown) => {
   const s = str(v, 10);
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
 };
+const hex = (v: unknown) => {
+  const s = str(v, 7).toLowerCase();
+  return /^#[0-9a-f]{6}$/.test(s) ? s : "";
+};
 const newId = (p: string) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 const FORMATS = ["paper", "ebook"] as const satisfies readonly Format[];
@@ -51,6 +55,7 @@ function bookFields(p: P, prev?: Book): Omit<Book, "id" | "addedAt"> {
     location: str(p.location ?? prev?.location, 100),
     link: url(p.link ?? prev?.link),
     cover: url(p.cover ?? prev?.cover),
+    color: hex(p.color ?? prev?.color),
     status,
     rating: int(p.rating ?? prev?.rating, 0, 5, 0),
     review: str(p.review ?? prev?.review, 20000),
@@ -87,12 +92,6 @@ export const commands: Record<string, Cmd> = {
     const b = findBook(L, p.id);
     L.books = L.books.filter((x) => x !== b);
     return `已移除《${b.title}》`;
-  },
-  /* 數量 +1 / -1 */
-  qty(L, p) {
-    const b = findBook(L, p.id);
-    b.qty = int(b.qty + int(p.delta, -1, 1, 0), 0, 999, b.qty);
-    return undefined;
   },
   addWish(L, p) {
     const w: Wish = { id: newId("w"), addedAt: Date.now(), ...wishFields(p) };

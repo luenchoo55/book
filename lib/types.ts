@@ -12,6 +12,7 @@ export type Book = {
   location: string; // 放在哪裡，例如「客廳書架第 2 層」「博客來 App」
   link: string; // 網路連結（博客來或其他）
   cover: string; // 封面圖片網址；空白就用博客來連結自動推算
+  color?: string; // 封面／書背顏色（#rrggbb）；空白或沒有就依書名自動配色
   status: Status;
   rating: number; // 0～5 顆星，0 = 還沒評分
   review: string; // 閱讀感想

@@ -3,12 +3,31 @@
 import { useState } from "react";
 import type { Book, Library } from "@/lib/types";
 import type { Op, OpenBook } from "./LibraryApp";
-import { Empty, Field, Icon, leatherOf, Modal, SecTitle } from "./ui";
+import { colorOf, Empty, Field, Icon, Modal, N, SecTitle, Summary } from "./ui";
 
 /* 書的位置：每個位置是一層木頭書架，書以書背的樣子排在上面。
-   位置可以自己新增、改名、刪除、調整順序；也可以直接把書搬到某一層。 */
+   位置可以自己新增、改名、刪除、調整順序；也可以用滑鼠把書背拖到別層，或用選單把書搬過來。 */
 export default function PlacesTab({ lib, op, openBook }: { lib: Library; op: Op; openBook: OpenBook }) {
   const [naming, setNaming] = useState<{ from?: string } | null>(null);
+  /* 拖曳中的書、目前滑過哪一層 */
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [over, setOver] = useState<string | null>(null);
+  const drag: Drag = {
+    dragId,
+    over,
+    start: setDragId,
+    end: () => {
+      setDragId(null);
+      setOver(null);
+    },
+    enter: setOver,
+    drop: (place) => {
+      const b = lib.books.find((x) => x.id === dragId);
+      setDragId(null);
+      setOver(null);
+      if (b && b.location !== place) op("moveBook", { id: b.id, location: place });
+    },
+  };
   const unplaced = lib.books.filter((b) => !b.location);
   const booksAt = (place: string) => lib.books.filter((b) => b.location === place);
 
@@ -24,12 +43,20 @@ export default function PlacesTab({ lib, op, openBook }: { lib: Library; op: Op;
           <Icon name="plus" size={16} /> 新增位置
         </button>
       </SecTitle>
-      <p className="font-zh text-sm text-muted">點書背可以編輯那本書；用每層右邊的「放一本書到這裡」把書搬過來。</p>
+      <Summary>
+        目前有<N>{lib.places.length}</N>個位置
+        {unplaced.length > 0 && (
+          <>
+            ，<N>{unplaced.length}</N>本書還沒記錄位置
+          </>
+        )}
+      </Summary>
+      <p className="font-zh text-base text-muted">用滑鼠把書背拖到別層就能搬家；點一下書背可以編輯那本書。</p>
 
       {lib.places.length || unplaced.length ? (
         <div className="mt-[18px] flex flex-col gap-[26px]">
           {lib.places.map((place, i) => (
-            <Shelf key={place} place={place} books={booksAt(place)} all={lib.books} op={op} openBook={openBook}>
+            <Shelf key={place} place={place} books={booksAt(place)} all={lib.books} op={op} openBook={openBook} drag={drag}>
               <div className="flex flex-none gap-0.5">
                 <button className="btn btn-ghost btn-sm px-1.5" disabled={i === 0} onClick={() => op("movePlace", { name: place, dir: -1 })} aria-label={`把「${place}」往上移`}>
                   <Icon name="up" size={16} />
@@ -40,13 +67,13 @@ export default function PlacesTab({ lib, op, openBook }: { lib: Library; op: Op;
                 <button className="btn btn-ghost btn-sm px-1.5" onClick={() => setNaming({ from: place })} aria-label={`改名「${place}」`}>
                   <Icon name="edit" size={16} />
                 </button>
-                <button className="btn btn-ghost btn-sm px-1.5 text-stamp" onClick={() => remove(place)} aria-label={`刪除「${place}」`}>
+                <button className="btn btn-ghost btn-sm px-1.5 text-berry" onClick={() => remove(place)} aria-label={`刪除「${place}」`}>
                   <Icon name="trash" size={16} />
                 </button>
               </div>
             </Shelf>
           ))}
-          {unplaced.length > 0 && <Shelf place="" books={unplaced} all={lib.books} op={op} openBook={openBook} />}
+          {unplaced.length > 0 && <Shelf place="" books={unplaced} all={lib.books} op={op} openBook={openBook} drag={drag} />}
         </div>
       ) : (
         <Empty title="No shelves yet.">按「新增位置」建立第一層書架，例如「客廳書架第 1 層」。</Empty>
@@ -59,13 +86,25 @@ export default function PlacesTab({ lib, op, openBook }: { lib: Library; op: Op;
   );
 }
 
-function Shelf({ place, books, all, op, openBook, children }: { place: string; books: Book[]; all: Book[]; op: Op; openBook: OpenBook; children?: React.ReactNode }) {
+type Drag = {
+  dragId: string | null;
+  over: string | null;
+  start: (id: string) => void;
+  end: () => void;
+  enter: (place: string | null) => void;
+  drop: (place: string) => void;
+};
+
+function Shelf({ place, books, all, op, openBook, drag, children }: { place: string; books: Book[]; all: Book[]; op: Op; openBook: OpenBook; drag: Drag; children?: React.ReactNode }) {
   const others = all.filter((b) => b.location !== place);
+  /* 拖著別層的書滑到這一層時，這層會亮起來 */
+  const fromHere = books.some((b) => b.id === drag.dragId);
+  const target = !!drag.dragId && !fromHere && drag.over === place;
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <h3 className={`flex min-w-0 items-center gap-2 font-zh text-base font-black tracking-wide break-words ${place ? "" : "text-muted"}`}>
-          <Icon name="pin" className="flex-none text-stamp" />
+        <h3 className={`flex min-w-0 items-center gap-2 font-zh text-lg font-bold tracking-wide break-words ${place ? "" : "text-muted"}`}>
+          <Icon name="pin" className="flex-none text-berry" />
           {place || "還沒記錄位置"}
           <small className="font-type text-[13px] font-normal whitespace-nowrap text-muted">
             {books.length} 種 · {books.reduce((s, b) => s + b.qty, 0)} 冊
@@ -74,7 +113,7 @@ function Shelf({ place, books, all, op, openBook, children }: { place: string; b
         <span className="flex-1" />
         {place && others.length > 0 && (
           <select
-            className="input min-h-8 w-auto max-w-56 py-0.5 font-zh text-[13px]"
+            className="input min-h-8 w-auto max-w-56 py-0.5 font-zh text-sm"
             value=""
             aria-label={`放一本書到「${place}」`}
             onChange={(e) => e.target.value && op("moveBook", { id: e.target.value, location: place })}
@@ -90,7 +129,25 @@ function Shelf({ place, books, all, op, openBook, children }: { place: string; b
         )}
         {children}
       </div>
-      <div className="plank flex min-h-[156px] items-end gap-[3px] overflow-x-auto rounded-t-[3px] px-3.5 pt-3.5">
+      <div
+        onDragOver={(e) => {
+          if (!drag.dragId) return;
+          e.preventDefault(); // 允許放下
+          e.dataTransfer.dropEffect = "move";
+          if (drag.over !== place) drag.enter(place);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null) && drag.over === place) drag.enter(null);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          drag.drop(place);
+        }}
+        className={`sketch plank relative flex min-h-[148px] items-end gap-1 overflow-x-auto rounded-[10px_12px_0_0/8px_10px_0_0] px-4 pt-3.5 transition-shadow ${target ? "shadow-[inset_0_0_0_4px_var(--color-sage),inset_0_0_40px_rgba(157,180,108,.55)]" : ""}`}
+      >
+        {target && (
+          <span className="pointer-events-none absolute top-3 right-4 z-10 rounded-full border-2 border-ink bg-sage px-3 py-0.5 font-zh text-sm font-bold text-ink">放到這裡</span>
+        )}
         {books.length ? (
           books.map((b) => {
             const h = 112 + ([...b.title].length % 4) * 8;
@@ -98,20 +155,27 @@ function Shelf({ place, books, all, op, openBook, children }: { place: string; b
             return (
               <button
                 key={b.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", b.title);
+                  drag.start(b.id);
+                }}
+                onDragEnd={drag.end}
                 onClick={() => openBook(b)}
-                title={`${b.title}${b.author ? "／" + b.author : ""}（${b.qty} 本）`}
-                style={{ height: h, width: w, backgroundColor: leatherOf(b.title) }}
-                className="spine-gilt flex flex-none items-center justify-center overflow-hidden rounded-t-[2px] py-3 text-center font-zh text-[13px] font-bold tracking-[.12em] text-gilt transition-transform [writing-mode:vertical-rl] hover:-translate-y-1.5"
+                title={`${b.title}${b.author ? "／" + b.author : ""}（${b.qty} 本）— 拖曳可以搬到別層`}
+                style={{ height: h, width: w, backgroundColor: colorOf(b) }}
+                className={`sketch spine-bands flex flex-none items-center justify-center overflow-hidden rounded-[5px_6px_0_0/4px_5px_0_0] py-3.5 text-center font-zh text-sm font-bold tracking-[.12em] text-spine transition [text-shadow:1px_1px_0_rgba(58,42,31,.45)] [writing-mode:vertical-rl] hover:-translate-y-1.5 active:cursor-grabbing ${drag.dragId === b.id ? "opacity-40" : "cursor-grab"}`}
               >
                 <span className="max-h-full overflow-hidden">{b.title}</span>
               </button>
             );
           })
         ) : (
-          <p className="self-center pb-3.5 font-elite text-sm tracking-wider text-on-wood-muted/70">An empty shelf…</p>
+          <p className="self-center pb-3.5 font-elite text-base font-bold tracking-wider text-muted italic">An empty shelf…</p>
         )}
       </div>
-      <div className="plank-edge h-3.5 rounded-b-[3px]" />
+      <div className="sketch plank-edge h-4 rounded-[0_0_8px_10px/0_0_6px_8px] shadow-[3px_4px_0_rgba(58,42,31,.3)]" />
     </div>
   );
 }

@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { FORMAT_LABEL, linkOf, STATUS_LABEL } from "@/lib/books";
+import { FORMAT_LABEL, STATUS_LABEL } from "@/lib/books";
 import type { Book, Format, Library, Status } from "@/lib/types";
-import type { Op, OpenBook } from "./LibraryApp";
-import { Cover, Empty, Icon, SecTitle, Seg, Stars, Stepper } from "./ui";
+import type { OpenBook } from "./LibraryApp";
+import { Cover, Empty, Icon, N, SecTitle, Seg, Stars, Summary } from "./ui";
 
-export const FORMAT_CHIP: Record<Format, string> = { ebook: "text-sea", paper: "text-amber" };
-export const STATUS_CHIP: Record<Status, string> = { done: "text-moss", reading: "text-stamp", unread: "text-faint" };
+export const FORMAT_CHIP: Record<Format, string> = { ebook: "bg-lav-soft text-plum", paper: "bg-tan text-ink" };
+export const STATUS_CHIP: Record<Status, string> = { done: "bg-sage-soft text-leaf", reading: "bg-rose-soft text-berry", unread: "bg-paper-2 text-muted" };
 
 type Sort = "new" | "title" | "author";
 
-/* 我的書櫃：統計、搜尋篩選、每本書一張卡片（可直接 ± 數量） */
-export default function ShelfTab({ lib, op, openBook }: { lib: Library; op: Op; openBook: OpenBook }) {
+/* 我的書櫃：統計、搜尋篩選、每本書一張卡片 */
+export default function ShelfTab({ lib, openBook }: { lib: Library; openBook: OpenBook }) {
   const [q, setQ] = useState("");
   const [fmt, setFmt] = useState<Format | "all">("all");
   const [st, setSt] = useState<Status | "all">("all");
@@ -39,12 +39,20 @@ export default function ShelfTab({ lib, op, openBook }: { lib: Library; op: Op; 
           <Icon name="plus" size={16} /> 新增書籍
         </button>
       </SecTitle>
+      <Summary>
+        目前我的書櫃裡有<N>{books.length}</N>本書
+        {stats[1][0] !== books.length && (
+          <>
+            ，共<N>{stats[1][0]}</N>冊
+          </>
+        )}
+      </Summary>
 
-      <dl className="my-4 grid grid-cols-2 overflow-hidden rounded-[3px] border border-line bg-[#fffaec]/25 sm:grid-cols-4">
+      <dl className="my-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(([n, l], i) => (
-          <div key={l} className={`flex flex-col-reverse gap-0.5 px-3.5 py-2.5 ${i % 2 ? "border-l border-dashed border-line" : ""} ${i >= 2 ? "border-t border-dashed border-line sm:border-t-0" : ""} ${i === 2 ? "sm:border-l" : ""}`}>
-            <dt className="font-zh text-xs tracking-wider text-muted">{l}</dt>
-            <dd className="font-type text-[26px] leading-tight font-bold tabular-nums">{n}</dd>
+          <div key={l} className={`sketch grain flex flex-col-reverse gap-0.5 px-4 py-2.5 ${["bg-sage-soft", "bg-tan/70", "bg-lav-soft", "bg-rose-soft"][i]}`}>
+            <dt className="font-zh text-sm font-bold tracking-wider text-ink-soft">{l}</dt>
+            <dd className="font-type text-[30px] leading-tight font-extrabold tabular-nums">{n}</dd>
           </div>
         ))}
       </dl>
@@ -57,7 +65,7 @@ export default function ShelfTab({ lib, op, openBook }: { lib: Library; op: Op; 
         </label>
         <Seg label="格式" value={fmt} onChange={setFmt} options={[["all", "全部"], ["paper", "實體"], ["ebook", "電子"]] as const} />
         <Seg label="閱讀狀態" value={st} onChange={setSt} options={[["all", "全部"], ["unread", "未讀"], ["reading", "閱讀中"], ["done", "已讀"]] as const} />
-        <select className="input w-auto min-h-9 py-1 font-zh text-[13px]" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="排序">
+        <select className="input min-h-9 w-auto py-1 font-zh text-sm" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="排序">
           <option value="new">最新加入</option>
           <option value="title">依書名</option>
           <option value="author">依作者</option>
@@ -67,7 +75,7 @@ export default function ShelfTab({ lib, op, openBook }: { lib: Library; op: Op; 
       {shown.length ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
           {shown.map((b) => (
-            <BookCard key={b.id} b={b} op={op} openBook={openBook} />
+            <BookCard key={b.id} b={b} openBook={openBook} />
           ))}
         </div>
       ) : books.length ? (
@@ -79,31 +87,31 @@ export default function ShelfTab({ lib, op, openBook }: { lib: Library; op: Op; 
   );
 }
 
-function BookCard({ b, op, openBook }: { b: Book; op: Op; openBook: OpenBook }) {
+function BookCard({ b, openBook }: { b: Book; openBook: OpenBook }) {
   return (
-    <article className="grid grid-cols-[92px_minmax(0,1fr)] gap-3.5 rounded-[3px] border border-rule bg-[#fffaec]/30 p-3.5 transition-colors hover:border-line hover:bg-[#fffaec]/55">
+    <article className="sketch grid grid-cols-[92px_minmax(0,1fr)] gap-3.5 bg-[#f7eed6] p-3.5 transition-colors hover:bg-sage-soft">
       <button onClick={() => openBook(b)} aria-label={`編輯《${b.title}》`} className="self-start">
         <Cover book={b} />
       </button>
       <div className="flex min-w-0 flex-col gap-1.5">
-        <h3 className="font-zh text-[17px] leading-snug font-black tracking-wide break-words">{b.title}</h3>
-        {b.author && <p className="font-zh text-[13px] text-muted">{b.author}</p>}
+        <h3 className="font-zh text-lg leading-snug font-bold tracking-wide break-words">{b.title}</h3>
+        {b.author && <p className="font-zh text-sm text-muted">{b.author}</p>}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={`chip ${FORMAT_CHIP[b.format]}`}>{FORMAT_LABEL[b.format]}</span>
           <span className={`chip ${STATUS_CHIP[b.status]}`}>{STATUS_LABEL[b.status]}</span>
           <Stars value={b.rating} className="text-sm" />
         </div>
-        <p className={`flex items-start gap-1 font-zh text-[13px] break-words ${b.location ? "" : "text-faint"}`}>
-          <Icon name="pin" size={15} className="mt-0.5 flex-none text-stamp" />
+        <p className={`flex items-start gap-1 font-zh text-sm break-words ${b.location ? "" : "text-faint"}`}>
+          <Icon name="pin" size={15} className="mt-0.5 flex-none text-berry" />
           {b.location || "還沒記錄位置"}
         </p>
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-rule pt-2">
-          <Stepper value={b.qty} label={b.title} onChange={(d) => op("qty", { id: b.id, delta: d })} />
+        <div className="mt-auto flex flex-wrap items-center justify-end gap-2 border-t-2 border-dotted border-ink/30 pt-2">
           <div className="flex gap-1">
-            <a className="btn btn-ghost btn-sm" href={linkOf(b)} target="_blank" rel="noreferrer" title={b.link ? "打開連結" : "到博客來搜尋這本書"}>
-              <Icon name={b.link ? "link" : "search"} size={15} />
-              {b.link ? "連結" : "博客來"}
-            </a>
+            {b.link && (
+              <a className="btn btn-ghost btn-sm" href={b.link} target="_blank" rel="noreferrer" title="打開連結">
+                <Icon name="link" size={15} /> 連結
+              </a>
+            )}
             <button className="btn btn-ghost btn-sm" onClick={() => openBook(b, "review")} title="寫閱讀感想">
               <Icon name="edit" size={15} /> 感想
             </button>

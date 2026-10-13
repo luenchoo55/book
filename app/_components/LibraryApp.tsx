@@ -8,7 +8,7 @@ import Login from "./Login";
 import PlacesTab from "./PlacesTab";
 import ReviewsTab from "./ReviewsTab";
 import ShelfTab from "./ShelfTab";
-import { Icon } from "./ui";
+import { CornerVine, Icon } from "./ui";
 import WishTab from "./WishTab";
 
 export type Op = (op: string, payload?: Record<string, unknown>) => Promise<boolean>;
@@ -20,6 +20,8 @@ const TABS = [
   ["wish", "想買清單"],
   ["places", "書的位置"],
 ] as const;
+/* 每個分頁籤一個顏色，像參考圖的 QUEST／SKILLS 籤 */
+const TAB_COLOR = { shelf: "bg-sage", reviews: "bg-lav", wish: "bg-tan", places: "bg-sky" } as const;
 type Tab = (typeof TABS)[number][0];
 
 /* 外框：先確認有沒有登入；登入後顯示木牌標題、分頁籤與各分頁內容 */
@@ -84,14 +86,8 @@ export default function LibraryApp() {
   };
 
   if (needLogin) return <Login onDone={load} />;
-  if (!lib) return <p className="py-20 text-center font-elite tracking-widest text-on-wood-muted">Opening the library…</p>;
+  if (!lib) return <p className="py-20 text-center font-elite text-lg font-bold tracking-widest text-cream-muted italic">Opening the library…</p>;
 
-  const counts: Record<Tab, number> = {
-    shelf: lib.books.length,
-    reviews: lib.books.filter((b) => b.review || b.rating).length,
-    wish: lib.wishes.length,
-    places: lib.places.length,
-  };
   const locations = lib.places;
 
   return (
@@ -99,20 +95,20 @@ export default function LibraryApp() {
       <header className="mx-auto max-w-[1120px] pt-5">
         <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
           <div className="flex min-w-0 items-center gap-3.5">
-            <span className="grid size-[46px] flex-none place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,#f0d49a,var(--color-brass)_60%,#7a5527)] text-wood-900 shadow-[0_2px_0_rgba(0,0,0,.4),inset_0_0_0_3px_rgba(60,40,15,.35)]">
-              <Icon name="book" size={22} />
+            <span className="sketch grid size-[50px] flex-none place-items-center rounded-full bg-sage text-ink shadow-[3px_3px_0_rgba(15,20,10,.35)]">
+              <Icon name="book" size={26} />
             </span>
             <button onClick={rename} title="點一下修改名稱" className="min-w-0 cursor-text text-left">
-              <h1 className="font-zh text-[clamp(22px,4.5vw,30px)] leading-tight font-black tracking-[.12em] text-on-wood [text-shadow:0_2px_0_rgba(0,0,0,.45)]">{lib.name}</h1>
-              <span className="block font-elite text-[13px] tracking-[.18em] text-brass-soft uppercase">Ex Libris · My Reading Room</span>
+              <h1 className="font-zh text-[clamp(24px,4.8vw,32px)] leading-tight font-bold tracking-[.12em] text-cream [text-shadow:2px_2px_0_rgba(15,20,10,.5)]">{lib.name}</h1>
+              <span className="block font-elite text-[13px] font-bold tracking-[.2em] text-sage-soft uppercase">Ex Libris · My Reading Room</span>
             </button>
           </div>
-          <button className="btn btn-wood btn-sm" onClick={logout}>
+          <button className="btn btn-sm" onClick={logout}>
             <Icon name="logout" size={16} /> 登出
           </button>
         </div>
 
-        <nav role="tablist" aria-label="圖書館分頁" className="no-scrollbar mt-5 flex gap-1 overflow-x-auto pt-1">
+        <nav role="tablist" aria-label="圖書館分頁" className="no-scrollbar relative mt-5 -mb-[3px] flex items-end gap-1.5 overflow-x-auto px-3 pt-2 sm:pl-24">
           {TABS.map(([k, l]) => (
             <button
               key={k}
@@ -122,30 +118,31 @@ export default function LibraryApp() {
                 setTab(k);
                 window.scrollTo({ top: 0 });
               }}
-              className={`flex-none rounded-t-md px-[18px] pt-2 pb-2.5 font-zh text-[15px] font-semibold tracking-[.06em] transition ${
-                tab === k ? "grain translate-y-px bg-paper text-ink" : "bg-on-wood/10 text-on-wood-muted hover:bg-on-wood/15 hover:text-on-wood"
+              className={`sketch grain flex-none rounded-[14px_10px_0_0/12px_14px_0_0] px-5 font-zh text-[17px] font-bold tracking-[.1em] text-ink transition-all ${TAB_COLOR[k]} ${
+                tab === k ? "pt-3 pb-3" : "pt-2 pb-2 hover:pt-2.5"
               }`}
             >
               {l}
-              <span className="ml-1.5 font-type text-xs opacity-70">{counts[k]}</span>
             </button>
           ))}
         </nav>
       </header>
 
-      <main className="paper mx-auto max-w-[1120px] rounded-tl-none p-[clamp(16px,3vw,32px)]">
-        {tab === "shelf" && <ShelfTab lib={lib} op={op} openBook={openBook} />}
+      <main className="paper mx-auto max-w-[1120px] p-[clamp(18px,3.5vw,36px)]">
+        <CornerVine corner="tl" className="hidden sm:block" />
+        <CornerVine corner="br" />
+        {tab === "shelf" && <ShelfTab lib={lib} openBook={openBook} />}
         {tab === "reviews" && <ReviewsTab lib={lib} openBook={openBook} />}
         {tab === "wish" && <WishTab lib={lib} op={op} locations={locations} />}
         {tab === "places" && <PlacesTab lib={lib} op={op} openBook={openBook} />}
       </main>
 
-      <p className="mt-6 text-center font-elite text-[13px] tracking-widest text-on-wood-muted">Good things take time…</p>
+      <p className="mt-7 text-center font-elite text-sm font-bold tracking-widest text-cream-muted italic">Good things take time…</p>
 
       <BookDialog editing={editing} onClose={() => setEditing(null)} op={op} locations={locations} />
 
       {msg && (
-        <div role="status" className="grain fixed bottom-[calc(20px+env(safe-area-inset-bottom,0px))] left-1/2 z-50 max-w-[calc(100vw-32px)] -translate-x-1/2 -rotate-1 animate-drop rounded-[2px] bg-paper px-[18px] py-2.5 font-zh text-sm font-semibold text-ink shadow-[0_10px_24px_rgba(0,0,0,.5)]">
+        <div role="status" className="sketch grain fixed bottom-[calc(20px+env(safe-area-inset-bottom,0px))] left-1/2 z-50 max-w-[calc(100vw-32px)] -translate-x-1/2 -rotate-1 animate-drop bg-sage-soft px-5 py-2.5 font-zh text-base font-bold text-ink shadow-[4px_5px_0_rgba(15,20,10,.4)]">
           {msg}
         </div>
       )}

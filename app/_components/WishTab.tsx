@@ -5,9 +5,10 @@ import { FORMAT_LABEL, isBooksCom, linkOf } from "@/lib/books";
 import type { Format, Library, Wish } from "@/lib/types";
 import type { Op } from "./LibraryApp";
 import { FORMAT_CHIP } from "./ShelfTab";
-import { Empty, Field, Icon, Modal, SecTitle, Seg } from "./ui";
+import { Coin, Empty, Field, Icon, LocationInput, Modal, N, SecTitle, Seg, Summary } from "./ui";
 
-const PRIORITY: Record<Wish["priority"], string> = { 1: "最想買", 2: "想買", 3: "有空再看" };
+const PRIORITY: Record<Wish["priority"], string> = { 1: "✦ 最想買", 2: "想買", 3: "有空再看" };
+const PRIORITY_CHIP: Record<Wish["priority"], string> = { 1: "bg-gold-soft text-ink", 2: "bg-tan text-ink", 3: "bg-paper-2 text-muted" };
 type Draft = Partial<Wish>;
 
 /* 想買清單：像圖書館的借書卡；買到之後一鍵移到書櫃 */
@@ -23,24 +24,31 @@ export default function WishTab({ lib, op, locations }: { lib: Library; op: Op; 
           <Icon name="plus" size={16} /> 加入想買
         </button>
       </SecTitle>
-      <p className="font-zh text-sm text-muted">下次逛博客來前先看一下。買到了按「買到了」，就會自動放上書櫃。</p>
+      <Summary>
+        目前有<N>{wishes.length}</N>本想買的書
+      </Summary>
+      <p className="font-zh text-base text-muted">下次逛博客來前先看一下。買到了按「買到了」，就會自動放上書櫃。</p>
 
       {wishes.length ? (
         <div className="mt-[18px] grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4">
           {wishes.map((w) => (
-            <article key={w.id} className="relative flex flex-col gap-2 rounded-[3px] border border-line bg-[#fffaec]/40 px-[18px] py-4">
-              <span className="absolute top-3 right-3 rotate-6 rounded-[3px] border-[1.5px] border-stamp px-1.5 py-0.5 font-zh text-xs font-bold tracking-wider text-stamp opacity-85">{PRIORITY[w.priority]}</span>
-              <h3 className="pr-24 font-zh text-[17px] leading-snug font-black break-words">{w.title}</h3>
+            <article key={w.id} className={`sketch flex flex-col gap-2 px-[18px] py-4 ${w.priority === 1 ? "bg-sage-soft" : "bg-[#f7eed6]"}`}>
+              <span className={`chip absolute top-3 right-3 rotate-3 ${PRIORITY_CHIP[w.priority]}`}>{PRIORITY[w.priority]}</span>
+              <h3 className="pr-24 font-zh text-lg leading-snug font-bold break-words">{w.title}</h3>
               <p className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[13px] text-muted">
                 {w.author && <span className="font-zh">{w.author}</span>}
                 <span className={`chip ${FORMAT_CHIP[w.format]}`}>{FORMAT_LABEL[w.format]}</span>
-                {w.price && <span className="font-type font-bold text-ink">{w.price}</span>}
+                {w.price && (
+                  <span className="inline-flex items-center gap-1 font-type text-base font-bold text-ink" aria-label={`價格 ${w.price}`}>
+                    <Coin /> {w.price}
+                  </span>
+                )}
               </p>
-              {w.note && <p className="border-l-[3px] border-rule pl-2.5 font-zh text-sm break-words whitespace-pre-wrap">{w.note}</p>}
-              <div className="mt-auto flex flex-wrap gap-1.5 border-t border-dashed border-rule pt-2.5">
-                <a className="btn btn-sm" href={linkOf(w)} target="_blank" rel="noreferrer">
+              {w.note && <p className="border-l-[3px] border-sage pl-2.5 font-zh text-[15px] break-words whitespace-pre-wrap">{w.note}</p>}
+              <div className="mt-auto flex flex-wrap gap-1.5 border-t-2 border-dotted border-ink/30 pt-2.5">
+                <a className="btn btn-sm" href={linkOf(w)} target="_blank" rel="noreferrer" title={w.link ? "打開連結" : `在瀏覽器搜尋「${w.title}」`}>
                   <Icon name={w.link ? "link" : "search"} size={15} />
-                  {w.link ? (isBooksCom(w.link) ? "博客來頁面" : "打開連結") : "搜尋博客來"}
+                  {w.link ? (isBooksCom(w.link) ? "博客來頁面" : "打開連結") : "搜尋本書"}
                 </a>
                 <span className="flex-1" />
                 <button className="btn btn-ghost btn-sm" onClick={() => setEditing(w)} aria-label={`編輯《${w.title}》`}>
@@ -104,7 +112,7 @@ function WishForm({ draft, op, onClose }: { draft: Draft; op: Op; onClose: () =>
           <Seg label="優先順序" value={f.priority} onChange={(v) => set("priority", v)} options={[[1, "最想買"], [2, "想買"], [3, "有空再看"]] as const} />
         </Field>
       </div>
-      <Field label="博客來連結" hint="不填的話，會提供「到博客來搜尋」">
+      <Field label="博客來連結" hint="選填。不填的話，會提供「搜尋本書」按鈕">
         <input className="input" type="url" value={f.link} onChange={(e) => set("link", e.target.value)} placeholder="https://www.books.com.tw/products/…" />
       </Field>
       <Field label="備註">
@@ -139,12 +147,7 @@ function BoughtForm({ wish, op, locations, onClose }: { wish: Wish; op: Op; loca
         《{wish.title}》要放在哪裡呢？
       </p>
       <Field label="放在哪裡">
-        <input className="input" list="bought-locations" autoFocus value={loc} onChange={(e) => setLoc(e.target.value)} placeholder="例如：客廳書架第 2 層" />
-        <datalist id="bought-locations">
-          {[...new Set(["博客來電子書 App", ...locations])].map((l) => (
-            <option key={l} value={l} />
-          ))}
-        </datalist>
+        <LocationInput autoFocus value={loc} onChange={setLoc} options={[...new Set(["博客來電子書 App", ...locations])]} />
       </Field>
       <div className="mt-2 flex justify-end gap-2">
         <button type="button" className="btn btn-ghost" onClick={onClose}>

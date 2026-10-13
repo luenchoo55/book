@@ -4,7 +4,7 @@ import { useState } from "react";
 import { coverOf, FORMAT_LABEL, isBooksCom, STATUS_LABEL } from "@/lib/books";
 import type { Book, Format, Status } from "@/lib/types";
 import type { Op } from "./LibraryApp";
-import { Cover, Field, Modal, Seg, StarInput } from "./ui";
+import { colorOf, Cover, Field, LocationInput, Modal, PALETTE, Seg, StarInput } from "./ui";
 
 export type BookDraft = Partial<Book>;
 
@@ -16,6 +16,7 @@ const EMPTY: Omit<Book, "id" | "addedAt"> = {
   location: "",
   link: "",
   cover: "",
+  color: "",
   status: "unread",
   rating: 0,
   review: "",
@@ -61,7 +62,7 @@ function BookForm({ draft, focus, onClose, op, locations }: { draft: BookDraft; 
         ? "✓ 已辨識博客來商品，會自動抓封面"
         : "博客來連結"
       : "其他網站的連結"
-    : "貼上博客來商品頁網址，會自動帶出封面；不填的話，會改成「到博客來搜尋」";
+    : "選填。貼上博客來商品頁網址，會自動帶出封面";
 
   return (
     <form onSubmit={save} className="flex flex-col gap-3.5">
@@ -84,12 +85,7 @@ function BookForm({ draft, focus, onClose, op, locations }: { draft: BookDraft; 
 
       <div className="grid gap-3.5 sm:grid-cols-[minmax(0,1fr)_auto]">
         <Field label="放在哪裡" hint="選以前用過的位置，或輸入新的">
-          <input className="input" list="locations" value={f.location} onChange={(e) => set("location", e.target.value)} placeholder="例如：客廳書架第 2 層" />
-          <datalist id="locations">
-            {[...new Set(["博客來電子書 App", ...locations])].map((l) => (
-              <option key={l} value={l} />
-            ))}
-          </datalist>
+          <LocationInput value={f.location} onChange={(v) => set("location", v)} options={[...new Set(["博客來電子書 App", ...locations])]} />
         </Field>
         <Field label="數量">
           <input className="input w-28 tabular-nums" type="number" min={0} max={999} value={f.qty} onChange={(e) => set("qty", Number(e.target.value))} />
@@ -99,6 +95,8 @@ function BookForm({ draft, focus, onClose, op, locations }: { draft: BookDraft; 
       <Field label="網路連結" hint={linkHint}>
         <input className="input" type="url" value={f.link} onChange={(e) => set("link", e.target.value)} placeholder="https://www.books.com.tw/products/…" />
       </Field>
+
+      <ColorPicker title={f.title} value={f.color ?? ""} onChange={(v) => set("color", v)} hasImage={!!coverOf(f)} />
 
       <details className="font-zh text-sm text-muted" open={!!f.cover}>
         <summary className="cursor-pointer select-none">自訂封面圖片網址（選填）</summary>
@@ -143,5 +141,30 @@ function BookForm({ draft, focus, onClose, op, locations }: { draft: BookDraft; 
         </button>
       </div>
     </form>
+  );
+}
+
+/* 封面顏色：自動（依書名）、8 個繪本色，或用調色盤選任意顏色 */
+function ColorPicker({ title, value, onChange, hasImage }: { title: string; value: string; onChange: (v: string) => void; hasImage: boolean }) {
+  const swatch = "sketch grid size-9 flex-none place-items-center rounded-full transition hover:-translate-y-0.5";
+  const on = "outline-3 outline-offset-2 outline-sage";
+  const custom = !!value && !PALETTE.includes(value);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="font-zh text-sm font-bold tracking-wide text-ink-soft">封面顏色</span>
+      <div role="radiogroup" aria-label="封面顏色" className="flex flex-wrap items-center gap-2.5 py-1">
+        <button type="button" role="radio" aria-checked={!value} onClick={() => onChange("")} title="自動配色（依書名）" className={`${swatch} font-type text-xs font-bold text-spine ${!value ? on : ""}`} style={{ backgroundColor: colorOf({ title }) }}>
+          自動
+        </button>
+        {PALETTE.map((c) => (
+          <button key={c} type="button" role="radio" aria-checked={value === c} aria-label={c} onClick={() => onChange(c)} className={`${swatch} ${value === c ? on : ""}`} style={{ backgroundColor: c }} />
+        ))}
+        <label title="自己調色" className={`${swatch} cursor-pointer overflow-hidden ${custom ? on : ""}`} style={{ background: custom ? value : "conic-gradient(#e8968a,#e2c796,#9db46c,#a9c8d4,#a597c7,#e8968a)" }}>
+          <span className="sr-only">自己調色</span>
+          <input type="color" value={value || colorOf({ title })} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 size-full cursor-pointer opacity-0" />
+        </label>
+      </div>
+      <span className="font-zh text-xs text-muted">{hasImage ? "這本書有封面圖片，顏色會用在「書的位置」的書背上。" : "最後一個彩色圓圈可以自己調色。書櫃封面和書背都會用這個顏色。"}</span>
+    </div>
   );
 }

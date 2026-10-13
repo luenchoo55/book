@@ -1,4 +1,4 @@
-import type { Book, Format, Status } from "./types";
+import type { Format, Status } from "./types";
 
 /* 前後端都會用到的小工具：標籤文字、連結推算 */
 
@@ -19,10 +19,9 @@ export function coverOf(b: { cover?: string; link: string }) {
   return `https://www.books.com.tw/img/${id.slice(0, 3)}/${id.slice(3, 6)}/${id.slice(6, 8)}/${id}.jpg`;
 }
 
-/* 沒有附連結時，提供「到博客來搜尋」 */
-export const searchBooksCom = (title: string, ebook = false) =>
-  `https://search.books.com.tw/search/query/key/${encodeURIComponent(title)}/cat/${ebook ? "EBA" : "all"}`;
+/* 沒有附連結時，提供「搜尋本書」：開新分頁用 Google 搜尋書名 */
+export const searchWeb = (title: string) => `https://www.google.com/search?q=${encodeURIComponent(title)}`;
 
-export const linkOf = (b: Pick<Book, "link" | "title" | "format">) => b.link || searchBooksCom(b.title, b.format === "ebook");
+export const linkOf = (b: { link: string; title: string }) => b.link || searchWeb(b.title);
 
 export const isBooksCom = (url: string) => /books\.com\.tw/i.test(url);
