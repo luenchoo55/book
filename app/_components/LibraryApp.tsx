@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import type { Library, OpResult } from "@/lib/types";
+import BackupButton from "./Backup";
 import BookDialog, { type BookDraft } from "./BookDialog";
 import Login from "./Login";
 import PlacesTab from "./PlacesTab";
@@ -98,7 +99,7 @@ export default function LibraryApp() {
 
   return (
     <>
-      {/* 頁首：固定在畫面上方，捲動時也看得到。左邊圖書館名稱，右邊搜尋按鈕和登出 */}
+      {/* 頁首：固定在畫面上方，捲動時也看得到。左邊圖書館名稱，右邊搜尋、備份和登出 */}
       <header className="sticky top-0 z-40 -mx-4 border-b-[3px] border-ink bg-forest-950/90 px-4 pt-[env(safe-area-inset-top,0px)] shadow-[0_4px_0_rgba(10,14,8,.35)] backdrop-blur-md">
         <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -112,8 +113,9 @@ export default function LibraryApp() {
           </div>
           <div className="flex flex-none items-center gap-2">
             <SearchButton lib={lib} openBook={openBook} onWish={() => switchTab("wish")} />
-            <button className="btn btn-sm" onClick={logout}>
-              <Icon name="logout" size={16} /> 登出
+            <BackupButton lib={lib} op={op} />
+            <button className="btn btn-sm" onClick={logout} title="登出" aria-label="登出">
+              <Icon name="logout" size={16} /> <span className="hidden sm:inline">登出</span>
             </button>
           </div>
         </div>

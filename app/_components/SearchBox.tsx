@@ -27,8 +27,8 @@ export default function SearchButton({ lib, openBook, onWish }: { lib: Library; 
 
   return (
     <>
-      <button className="btn btn-sm" onClick={() => setOpen(true)} title="搜尋書籍（快捷鍵 /）">
-        <Icon name="search" size={16} /> 搜尋
+      <button className="btn btn-sm" onClick={() => setOpen(true)} title="搜尋書籍（快捷鍵 /）" aria-label="搜尋書籍">
+        <Icon name="search" size={16} /> <span className="hidden sm:inline">搜尋</span>
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="搜尋書籍">
         <SearchPanel

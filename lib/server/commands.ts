@@ -181,6 +181,40 @@ export const commands: Record<string, Cmd> = {
     b.location = str(p.location, 100);
     return b.location ? `《${b.title}》已放到「${b.location}」` : `《${b.title}》改成未記錄位置`;
   },
+  /* 匯入備份：用備份檔的內容整個取代目前的圖書館。
+     每本書、每筆想買都重新檢查一次欄位，格式不對的備份不會把資料弄壞 */
+  restore(L, p) {
+    const src = (p.library ?? {}) as P;
+    if (!Array.isArray(src.books) || !Array.isArray(src.wishes)) throw new UserError("這不是圖書館的備份檔");
+    const seen = new Set<string>();
+    const keep = (id: unknown, prefix: string) => {
+      const s = str(id, 40);
+      const ok = /^[A-Za-z0-9_-]+$/.test(s) && !seen.has(s) ? s : newId(prefix);
+      seen.add(ok);
+      return ok;
+    };
+    const time = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : Date.now());
+    const label = (i: number, x: P) => `第 ${i + 1} 筆（${str(x.title, 40) || "沒有書名"}）`;
+    const books = (src.books as P[]).map((x, i): Book => {
+      try {
+        return { id: keep(x.id, "b"), addedAt: time(x.addedAt), ...bookFields(x) };
+      } catch (e) {
+        throw new UserError(`備份裡的書${label(i, x)}有問題：${(e as Error).message}`);
+      }
+    });
+    const wishes = (src.wishes as P[]).map((x, i): Wish => {
+      try {
+        return { id: keep(x.id, "w"), addedAt: time(x.addedAt), ...wishFields(x) };
+      } catch (e) {
+        throw new UserError(`備份裡想買的書${label(i, x)}有問題：${(e as Error).message}`);
+      }
+    });
+    L.name = str(src.name, 40) || L.name;
+    L.books = books;
+    L.wishes = wishes;
+    L.places = Array.isArray(src.places) ? [...new Set((src.places as unknown[]).map((x) => str(x, 100)).filter(Boolean))] : [];
+    return `已匯入備份：${books.length} 本書、${wishes.length} 本想買的書`;
+  },
   rename(L, p) {
     const name = str(p.name, 40);
     if (!name) throw new UserError("請輸入圖書館名稱");
