@@ -7,6 +7,7 @@ import BookDialog, { type BookDraft } from "./BookDialog";
 import Login from "./Login";
 import PlacesTab from "./PlacesTab";
 import ReviewsTab from "./ReviewsTab";
+import SearchButton from "./SearchBox";
 import ShelfTab from "./ShelfTab";
 import { CornerVine, Icon } from "./ui";
 import WishTab from "./WishTab";
@@ -74,6 +75,11 @@ export default function LibraryApp() {
 
   const openBook = useCallback<OpenBook>((draft, focus) => setEditing({ draft, focus }), []);
 
+  const switchTab = (k: Tab) => {
+    setTab(k);
+    window.scrollTo({ top: 0 });
+  };
+
   const logout = async () => {
     await api("/api/login", { method: "DELETE" }).catch(() => {});
     setLib(null);
@@ -92,32 +98,35 @@ export default function LibraryApp() {
 
   return (
     <>
-      <header className="mx-auto max-w-[1120px] pt-5">
-        <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
-          <div className="flex min-w-0 items-center gap-3.5">
-            <span className="sketch grid size-[50px] flex-none place-items-center rounded-full bg-sage text-ink shadow-[3px_3px_0_rgba(15,20,10,.35)]">
-              <Icon name="book" size={26} />
+      {/* 頁首：固定在畫面上方，捲動時也看得到。左邊圖書館名稱，右邊搜尋按鈕和登出 */}
+      <header className="sticky top-0 z-40 -mx-4 border-b-[3px] border-ink bg-forest-950/90 px-4 pt-[env(safe-area-inset-top,0px)] shadow-[0_4px_0_rgba(10,14,8,.35)] backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="sketch grid size-11 flex-none place-items-center rounded-full bg-sage text-ink shadow-[3px_3px_0_rgba(0,0,0,.35)]">
+              <Icon name="book" size={23} />
             </span>
             <button onClick={rename} title="點一下修改名稱" className="min-w-0 cursor-text text-left">
-              <h1 className="font-zh text-[clamp(24px,4.8vw,32px)] leading-tight font-bold tracking-[.12em] text-cream [text-shadow:2px_2px_0_rgba(15,20,10,.5)]">{lib.name}</h1>
-              <span className="block font-elite text-[13px] font-bold tracking-[.2em] text-sage-soft uppercase">Ex Libris · My Reading Room</span>
+              <h1 className="truncate font-zh text-[clamp(20px,4vw,26px)] leading-tight font-bold tracking-[.12em] text-cream [text-shadow:2px_2px_0_rgba(15,20,10,.5)]">{lib.name}</h1>
+              <span className="block truncate font-elite text-xs font-bold tracking-[.2em] text-sage-soft uppercase">Ex Libris · My Reading Room</span>
             </button>
           </div>
-          <button className="btn btn-sm" onClick={logout}>
-            <Icon name="logout" size={16} /> 登出
-          </button>
+          <div className="flex flex-none items-center gap-2">
+            <SearchButton lib={lib} openBook={openBook} onWish={() => switchTab("wish")} />
+            <button className="btn btn-sm" onClick={logout}>
+              <Icon name="logout" size={16} /> 登出
+            </button>
+          </div>
         </div>
+      </header>
 
-        <nav role="tablist" aria-label="圖書館分頁" className="no-scrollbar relative mt-5 -mb-[3px] flex items-end gap-1.5 overflow-x-auto px-3 pt-2 sm:pl-24">
+      <div className="mx-auto max-w-[1120px] pt-6">
+        <nav role="tablist" aria-label="圖書館分頁" className="no-scrollbar relative -mb-[3px] flex items-end gap-1.5 overflow-x-auto px-3 pt-2 sm:pl-24">
           {TABS.map(([k, l]) => (
             <button
               key={k}
               role="tab"
               aria-selected={tab === k}
-              onClick={() => {
-                setTab(k);
-                window.scrollTo({ top: 0 });
-              }}
+              onClick={() => switchTab(k)}
               className={`sketch grain flex-none rounded-[14px_10px_0_0/12px_14px_0_0] px-5 font-zh text-[17px] font-bold tracking-[.1em] text-ink transition-all ${TAB_COLOR[k]} ${
                 tab === k ? "pt-3 pb-3" : "pt-2 pb-2 hover:pt-2.5"
               }`}
@@ -126,7 +135,7 @@ export default function LibraryApp() {
             </button>
           ))}
         </nav>
-      </header>
+      </div>
 
       <main className="paper mx-auto max-w-[1120px] p-[clamp(18px,3.5vw,36px)]">
         <CornerVine corner="tl" className="hidden sm:block" />
